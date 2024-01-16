@@ -47,6 +47,7 @@
 #include "ga-androidvideo.h"
 #else
 #include "ga-xwin.h"
+#include "ga_loadgen.h"
 #endif
 
 #include "ga-avcodec.h"
@@ -82,6 +83,7 @@ static int vsource_reconfigured = 0;
  */
 static int
 vsource_init(void *arg) {
+	ga_error("Initialized vsource\n");
 	struct RTSPConf *rtspconf = rtspconf_global();
 	struct gaRect *rect = (struct gaRect*) arg;
 	//
@@ -133,7 +135,7 @@ vsource_init(void *arg) {
 		return -1;
 	}
 #else
-	if(ga_xwin_init(rtspconf->display, image) < 0) {
+	if(ga_loadgen_init(image) < 0) {
 		ga_error("XWindow capture init failed.\n");
 		return -1;
 	}
@@ -207,6 +209,7 @@ vsource_threadproc(void *arg) {
 	gettimeofday(&initialTv, NULL);
 	lastTv = initialTv;
 	token = frame_interval;
+	vsource_started = 1;
 	while(vsource_started != 0) {
 		// encoder has not launched?
 		if(encoder_running() == 0) {
@@ -273,7 +276,8 @@ vsource_threadproc(void *arg) {
 #elif defined ANDROID
 		ga_androidvideo_capture((char*) frame->imgbuf, frame->imgbufsize);
 #else // X11
-		ga_xwin_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
+		// ga_error("Started vsource leggo\n");
+		ga_loadgen_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
 #endif
 		// draw cursor
 #ifdef WIN32

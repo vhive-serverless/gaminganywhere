@@ -2,9 +2,9 @@
 include ../Makefile.common
 
 ifeq ($(OS), Linux)
-CFLAGS	+= -I.. $(X11CF)
+CFLAGS	+= -g -I.. $(X11CF)
 LDFLAGS	+= $(X11LD)
-OBJS	= vsource-desktop.o ga-xwin.o
+OBJS	= vsource-desktop.o ga-xwin.o ga_loadgen.o
 endif
 
 ifeq ($(OS), MSYS)

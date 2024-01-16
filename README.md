@@ -36,3 +36,19 @@ can be ported to other OS's including OS X and Android.
 		libgl1-mesa-dev libglu1-mesa-dev \
 		libpulse-dev libasound2-dev lib32z1
   ```
+
+# To run headless
+Compile binaries
+```
+./setup.sh
+```
+
+Run client
+```
+./run-client.sh
+```
+
+Run server
+```
+./run-server.sh
+```

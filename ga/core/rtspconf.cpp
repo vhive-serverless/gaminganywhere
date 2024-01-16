@@ -36,7 +36,7 @@ using namespace std;
 
 #define	RTSP_DEF_OBJECT		"/desktop"
 #define	RTSP_DEF_TITLE		"Real-Time Desktop"
-#define	RTSP_DEF_DISPLAY	":0"
+#define	RTSP_DEF_DISPLAY	":1"
 #define	RTSP_DEF_SERVERPORT	554
 #define	RTSP_DEF_PROTO		IPPROTO_UDP
 
