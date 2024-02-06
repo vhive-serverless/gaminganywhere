@@ -29,8 +29,6 @@
 #include "ga-conf.h"
 #include "ga-avcodec.h"
 
-#include "dpipe.h"
-#include "dpipe.h"
 #include "filter-rgb2yuv.h"
 
 #define	POOLSIZE		8
@@ -53,8 +51,8 @@ filter_RGB2YUV_init(void *arg) {
 	// arg is image source id
 	int iid;
 	const char **filterpipe = (const char **) arg;
-	dpipe_t *srcpipe[VIDEO_SOURCE_CHANNEL_MAX];
-	dpipe_t *dstpipe[VIDEO_SOURCE_CHANNEL_MAX];
+	serverless_dpipe_t *srcpipe[VIDEO_SOURCE_CHANNEL_MAX];
+	serverless_dpipe_t *dstpipe[VIDEO_SOURCE_CHANNEL_MAX];
 	char savefile[128];
 	//
 	if(filter_initialized != 0)
@@ -74,14 +72,17 @@ filter_RGB2YUV_init(void *arg) {
 		char srcpipename[64], dstpipename[64];
 		int inputW, inputH, outputW, outputH;
 		struct SwsContext *swsctx = NULL;
-		dpipe_buffer_t *data = NULL;
+		serverless_dpipe_buffer_t *data = NULL;
 		//
 		snprintf(srcpipename, sizeof(srcpipename), filterpipe[0], iid);
 		snprintf(dstpipename, sizeof(dstpipename), filterpipe[1], iid);
-		srcpipe[iid] = dpipe_lookup(srcpipename);
+		srcpipe[iid] = serverless_dpipe_lookup(srcpipename);
 		if(srcpipe[iid] == NULL) {
-			ga_error("RGB2YUV filter: cannot find pipe %s\n", srcpipename);
-			goto init_failed;
+			char pipename[64];
+			snprintf(pipename, sizeof(pipename), VIDEO_SOURCE_PIPEFORMAT, iid);
+			int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+			int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+			serverless_dpipe_create(iid, pipename, 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
 		}
 		inputW = video_source_curr_width(iid);
 		inputH = video_source_curr_height(iid);
@@ -122,18 +123,18 @@ filter_RGB2YUV_init(void *arg) {
 			goto init_failed;
 		}
 		//
-		dstpipe[iid] = dpipe_create(iid, dstpipename, POOLSIZE,
+		dstpipe[iid] = serverless_dpipe_create(iid, dstpipename, POOLSIZE,
 				sizeof(vsource_frame_t) + video_source_mem_size(iid));
 		if(dstpipe[iid] == NULL) {
 			ga_error("RGB2YUV filter: create dst-pipeline failed (%s).\n", dstpipename);
 			goto init_failed;
 		}
-		for(data = dstpipe[iid]->in; data != NULL; data = data->next) {
-			if(vsource_frame_init(iid, (vsource_frame_t*) data->pointer) == NULL) {
-				ga_error("RGB2YUV filter: init frame failed for %s.\n", dstpipename);
-				goto init_failed;
-			}
-		}
+		// for(data = dstpipe[iid]->in; data != NULL; data = data->next) {
+		// 	if(vsource_frame_init(iid, (vsource_frame_t*) data->pointer) == NULL) {
+		// 		ga_error("RGB2YUV filter: init frame failed for %s.\n", dstpipename);
+		// 		goto init_failed;
+		// 	}
+		// }
 		video_source_add_pipename(iid, dstpipename);
 	}
 	//
@@ -143,7 +144,7 @@ filter_RGB2YUV_init(void *arg) {
 init_failed:
 	for(iid = 0; iid < video_source_channels(); iid++) {
 		if(dstpipe[iid] != NULL)
-			dpipe_destroy(dstpipe[iid]);
+			serverless_dpipe_destroy(dstpipe[iid]);
 		dstpipe[iid] = NULL;
 	}
 #if 0
@@ -172,10 +173,10 @@ filter_RGB2YUV_threadproc(void *arg) {
 	// arg is pointer to source pipe
 	//char pipename[64];
 	const char **filterpipe = (const char **) arg;
-	dpipe_t *srcpipe = dpipe_lookup(filterpipe[0]);
-	dpipe_t *dstpipe = dpipe_lookup(filterpipe[1]);
-	dpipe_buffer_t *srcdata = NULL;
-	dpipe_buffer_t *dstdata = NULL;
+	serverless_dpipe_t *srcpipe = serverless_dpipe_lookup(filterpipe[0]);
+	serverless_dpipe_t *dstpipe = serverless_dpipe_lookup(filterpipe[1]);
+	serverless_dpipe_buffer_t *srcdata = NULL;
+	serverless_dpipe_buffer_t *dstdata = NULL;
 	vsource_frame_t *srcframe = NULL;
 	vsource_frame_t *dstframe = NULL;
 	// image info
@@ -212,17 +213,17 @@ filter_RGB2YUV_threadproc(void *arg) {
 	// start filtering
 	while(filter_started != 0) {
 		// wait for notification
-		srcdata = dpipe_load(srcpipe, NULL);
+		srcdata = serverless_dpipe_load(srcpipe, NULL);
 		if(srcdata == NULL) {
-			ga_error("RGB2YUV filter: unexpected NULL frame received (from '%s', data=%d, buf=%d).\n",
-				srcpipe->name, srcpipe->out_count, srcpipe->in_count);
+			ga_error("RGB2YUV filter: unexpected NULL frame received (from '%s').\n",
+				srcpipe->name);
 			exit(-1);
 			// should never be here
 			goto filter_quit;
 		}
 		srcframe = (vsource_frame_t*) srcdata->pointer;
 		//
-		dstdata = dpipe_get(dstpipe);
+		dstdata = serverless_dpipe_get(dstpipe);
 		dstframe = (vsource_frame_t*) dstdata->pointer;
 		// basic info
 		dstframe->imgpts = srcframe->imgpts;
@@ -296,8 +297,8 @@ filter_RGB2YUV_threadproc(void *arg) {
 			ga_save_yuv420p(savefp, outputW, outputH, dst, dstframe->linesize);
 		}
 		//
-		dpipe_put(srcpipe, srcdata);
-		dpipe_store(dstpipe, dstdata);
+		serverless_dpipe_put(srcpipe, srcdata);
+		serverless_dpipe_store(dstpipe, dstdata);
 		//
 	}
 	//
@@ -306,7 +307,7 @@ filter_quit:
 		srcpipe = NULL;
 	}
 	if(dstpipe) {
-		dpipe_destroy(dstpipe);
+		serverless_dpipe_destroy(dstpipe);
 		dstpipe = NULL;
 	}
 	//

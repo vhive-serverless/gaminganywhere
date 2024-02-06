@@ -36,6 +36,7 @@
 #include "ga-conf.h"
 #include "ga-avcodec.h"
 #include "ga-crc.h"
+#include "serverlessdpipe.h"
 
 /**< Video buffer allocation alignment: should be 2^n */
 #define	VSOURCE_ALIGNMENT	16
@@ -681,8 +682,8 @@ video_source_mem_size(int channel) {
 	return vs == NULL ? 0 : (vs->max_height * vs->max_stride + VSOURCE_ALIGNMENT);
 }
 
-/** Return the larger value of \a x and \a y */
-#define	max(x, y)	((x) > (y) ? (x) : (y))
+// /** Return the larger value of \a x and \a y */
+// #define	max(x, y)	((x) > (y) ? (x) : (y))
 
 /**
  * The generic function to setup video sources.
@@ -731,9 +732,9 @@ video_source_setup_ex(vsource_config_t *config, int nConfig) {
 			ga_error("video source: setup pipename failed (%s).\n", pipename);
 			return -1;
 		}
-		vs->max_width   = max(VIDEO_SOURCE_DEF_MAXWIDTH, maxres[0]);
-		vs->max_height  = max(VIDEO_SOURCE_DEF_MAXHEIGHT, maxres[1]);
-		vs->max_stride  = max(VIDEO_SOURCE_DEF_MAXWIDTH, maxres[0]) * 4;
+		vs->max_width   = std::max(VIDEO_SOURCE_DEF_MAXWIDTH, maxres[0]);
+		vs->max_height  = std::max(VIDEO_SOURCE_DEF_MAXHEIGHT, maxres[1]);
+		vs->max_stride  = std::max(VIDEO_SOURCE_DEF_MAXWIDTH, maxres[0]) * 4;
 		vs->curr_width  = config[idx].curr_width;
 		vs->curr_height = config[idx].curr_height;
 		vs->curr_stride = config[idx].curr_stride;

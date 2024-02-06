@@ -26,8 +26,7 @@
 #include "ga-avcodec.h"
 #include "ga-conf.h"
 #include "ga-module.h"
-
-#include "dpipe.h"
+#include <iostream>
 
 //// Prevent use of GLOBAL_HEADER to pass parameters, disabled by default
 //#define STANDALONE_SDP	1
@@ -103,7 +102,7 @@ vencoder_init(void *arg) {
 	for(iid = 0; iid < video_source_channels(); iid++) {
 		char pipename[64];
 		int outputW, outputH;
-		dpipe_t *pipe;
+		serverless_dpipe_t *pipe;
 		//
 		_sps[iid] = _pps[iid] = NULL;
 		_spslen[iid] = _ppslen[iid] = 0;
@@ -112,10 +111,14 @@ vencoder_init(void *arg) {
 		snprintf(pipename, sizeof(pipename), pipefmt, iid);
 		outputW = video_source_out_width(iid);
 		outputH = video_source_out_height(iid);
-		if((pipe = dpipe_lookup(pipename)) == NULL) {
+		int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+		int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+		serverless_dpipe_create(iid, pipename, 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+		if((pipe = serverless_dpipe_lookup(pipename)) == NULL) {
 			ga_error("video encoder: pipe %s is not found\n", pipename);
 			goto init_failed;
 		}
+		
 		ga_error("video encoder: video source #%d from '%s' (%dx%d).\n",
 			iid, pipe->name, outputW, outputH);
 		vencoder[iid] = ga_avcodec_vencoder_init(NULL,
@@ -221,8 +224,9 @@ vencoder_threadproc(void *arg) {
 	int iid, outputW, outputH;
 	vsource_frame_t *frame = NULL;
 	char *pipename = (char*) arg;
-	dpipe_t *pipe = dpipe_lookup(pipename);
-	dpipe_buffer_t *data = NULL;
+	ga_error("FUck its here");
+	serverless_dpipe_t *pipe = serverless_dpipe_lookup(pipename);
+	serverless_dpipe_buffer_t *data = NULL;
 	AVCodecContext *encoder = NULL;
 	//
 	AVFrame *pic_in = NULL;
@@ -290,7 +294,7 @@ vencoder_threadproc(void *arg) {
 		gettimeofday(&tv, NULL);
 		to.tv_sec = tv.tv_sec+1;
 		to.tv_nsec = tv.tv_usec * 1000;
-		data = dpipe_load(pipe, &to);
+		data = serverless_dpipe_load(pipe, &to);
 		if(data == NULL) {
 			ga_error("viedo encoder: image source timed out.\n");
 			continue;
@@ -313,11 +317,11 @@ vencoder_threadproc(void *arg) {
 			ga_error("video encoder: YUV mode failed - mismatched linesize(s) (src:%d,%d,%d; dst:%d,%d,%d)\n",
 				frame->linesize[0], frame->linesize[1], frame->linesize[2],
 				pic_in->linesize[0], pic_in->linesize[1], pic_in->linesize[2]);
-			dpipe_put(pipe, data);
+			serverless_dpipe_put(pipe, data);
 			goto video_quit;
 		}
 		tv = frame->timestamp;
-		dpipe_put(pipe, data);
+		serverless_dpipe_put(pipe, data);
 		// pts must be monotonically increasing
 		if(newpts > pts) {
 			pts = newpts;

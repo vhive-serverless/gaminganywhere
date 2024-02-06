@@ -13,6 +13,9 @@ CFLAGS	+= $(ASNDCF) $(X11CF)
 LDFLAGS	+= $(EXTRALDFLAGS) $(AVCLD) $(X11LD)
 endif
 
+LDFLAGS += -lredis++
+LDFLAGS += -lhiredis
+
 ifeq ($(OS), MSYS)
 SO_EXT	= .dll
 CFLAGS  += -DGA_LIB
@@ -35,7 +38,7 @@ OBJS =	ga-common.o ga-conf.o ga-confvar.o ga-module.o ga-avcodec.o \
 	ga-crc.o \
 	rtspconf.o dpipe.o vconverter.o \
 	vsource.o asource.o encoder-common.o \
-	controller.o ctrl-msg.o
+	controller.o ctrl-msg.o serverlessdpipe.o
 
 ifeq ($(OS), MSYS)
 OBJS +=	ga-win32.o

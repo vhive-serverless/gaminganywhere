@@ -26,7 +26,6 @@
 #include <map>
 
 #include "vsource.h"
-#include "dpipe.h"
 #include "encoder-common.h"
 #include "rtspconf.h"
 
@@ -86,6 +85,7 @@ vsource_init(void *arg) {
 	ga_error("Initialized vsource\n");
 	struct RTSPConf *rtspconf = rtspconf_global();
 	struct gaRect *rect = (struct gaRect*) arg;
+	
 	//
 	if(vsource_initialized != 0)
 		return 0;
@@ -181,9 +181,9 @@ vsource_threadproc(void *arg) {
 	int token;
 	int frame_interval;
 	struct timeval tv;
-	dpipe_buffer_t *data;
+	serverless_dpipe_buffer_t *data;
 	vsource_frame_t *frame;
-	dpipe_t *pipe[SOURCES];
+	serverless_dpipe_t *pipe[SOURCES];
 	struct timeval initialTv, lastTv, captureTv;
 	struct RTSPConf *rtspconf = rtspconf_global();
 	// reset framerate setup
@@ -199,9 +199,11 @@ vsource_threadproc(void *arg) {
 	for(i = 0; i < SOURCES; i++) {
 		char pipename[64];
 		snprintf(pipename, sizeof(pipename), VIDEO_SOURCE_PIPEFORMAT, i);
-		if((pipe[i] = dpipe_lookup(pipename)) == NULL) {
-			ga_error("video source: cannot find pipeline '%s'\n", pipename);
-			exit(-1);
+		if((pipe[i] = serverless_dpipe_lookup(pipename)) == NULL) {
+			int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+			int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+			serverless_dpipe_create(i, pipename, 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+			pipe[i] = serverless_dpipe_lookup(pipename);
 		}
 	}
 	//
@@ -240,7 +242,7 @@ vsource_threadproc(void *arg) {
 		}
 		token -= frame_interval;
 		// copy image 
-		data = dpipe_get(pipe[0]);
+		data = serverless_dpipe_get(pipe[0]);
 		frame = (vsource_frame_t*) data->pointer;
 #ifdef __APPLE__
 		frame->pixelformat = AV_PIX_FMT_RGBA;
@@ -292,16 +294,16 @@ vsource_threadproc(void *arg) {
 #endif
 		// duplicate from channel 0 to other channels
 		for(i = 1; i < SOURCES; i++) {
-			dpipe_buffer_t *dupdata;
+			serverless_dpipe_buffer_t *dupdata;
 			vsource_frame_t *dupframe;
-			dupdata = dpipe_get(pipe[i]);
-			dupframe = (vsource_frame_t*) dupdata->pointer;
+			dupdata = serverless_dpipe_get(pipe[i]);
+			dupframe = dupdata->pointer;
 			//
 			vsource_dup_frame(frame, dupframe);
 			//
-			dpipe_store(pipe[i], dupdata);
+			serverless_dpipe_store(pipe[i], dupdata);
 		}
-		dpipe_store(pipe[0], data);
+		serverless_dpipe_store(pipe[0], data);
 		// reconfigured?
 		if(vsource_reconfigured != 0) {
 			frame_interval = (int) (1000000.0 * vsource_framerate_d / vsource_framerate_n);
