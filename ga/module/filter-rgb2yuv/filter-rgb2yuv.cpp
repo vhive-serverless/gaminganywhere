@@ -58,9 +58,15 @@ filter_RGB2YUV_init(void *arg) {
 	if(filter_initialized != 0)
 		return 0;
 	//
+
 	if(ga_conf_readv("save-yuv-image", savefile, sizeof(savefile)) != NULL) {
 		savefp = ga_save_init(savefile);
 	}
+	int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+	int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+	serverless_dpipe_create(0, "video-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	serverless_dpipe_create(0, "filter-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	
 #ifdef ENABLE_EMBED_COLORCODE
 	vsource_embed_colorcode_init(0/*RGBmode*/);
 #endif
@@ -89,24 +95,25 @@ filter_RGB2YUV_init(void *arg) {
 		outputW = video_source_out_width(iid);
 		outputH = video_source_out_height(iid);
 		// create default converters
-		if(ga_conf_readv("filter-source-pixelformat", pixelfmt, sizeof(pixelfmt)) != NULL) {
-			if(strcasecmp("rgba", pixelfmt) == 0) {
-				swsctx = create_frame_converter(
-						inputW, inputH, AV_PIX_FMT_RGBA,
-						outputW, outputH, AV_PIX_FMT_YUV420P);
-				ga_error("RGB2YUV filter: RGBA source specified.\n");
-			} else if(strcasecmp("bgra", pixelfmt) == 0) {
-				swsctx = create_frame_converter(
-						inputW, inputH, AV_PIX_FMT_BGRA,
-						outputW, outputH, AV_PIX_FMT_YUV420P);
-				ga_error("RGB2YUV filter: BGRA source specified.\n");
-			} else if(strcasecmp("yuv420p", pixelfmt) == 0) {
-				swsctx = create_frame_converter(
-						inputW, inputH, AV_PIX_FMT_YUV420P,
-						outputW, outputH, AV_PIX_FMT_YUV420P);
-				ga_error("RGB2YUV filter: YUV source specified.\n");
-			}
-		}
+		ga_error("awefawefawef %s\n", pixelfmt);
+		// if(ga_conf_readv("filter-source-pixelformat", pixelfmt, sizeof(pixelfmt)) != NULL) {
+		// 	if(strcasecmp("rgba", pixelfmt) == 0) {
+		// 		swsctx = create_frame_converter(
+		// 				inputW, inputH, AV_PIX_FMT_RGBA,
+		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
+		// 		ga_error("RGB2YUV filter: RGBA source specified.\n");
+		// 	} else if(strcasecmp("bgra", pixelfmt) == 0) {
+		// 		swsctx = create_frame_converter(
+		// 				inputW, inputH, AV_PIX_FMT_BGRA,
+		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
+		// 		ga_error("RGB2YUV filter: BGRA source specified.\n");
+		// 	} else if(strcasecmp("yuv420p", pixelfmt) == 0) {
+		// 		swsctx = create_frame_converter(
+		// 				inputW, inputH, AV_PIX_FMT_YUV420P,
+		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
+		// 		ga_error("RGB2YUV filter: YUV source specified.\n");
+		// 	}
+		// }
 		if(swsctx == NULL) {
 #ifdef __APPLE__
 			swsctx = create_frame_converter(
@@ -173,8 +180,12 @@ filter_RGB2YUV_threadproc(void *arg) {
 	// arg is pointer to source pipe
 	//char pipename[64];
 	const char **filterpipe = (const char **) arg;
-	serverless_dpipe_t *srcpipe = serverless_dpipe_lookup(filterpipe[0]);
-	serverless_dpipe_t *dstpipe = serverless_dpipe_lookup(filterpipe[1]);
+	int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+	int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+	serverless_dpipe_t *srcpipe = serverless_dpipe_create(0, "video-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	serverless_dpipe_t *dstpipe = serverless_dpipe_create(0, "filter-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	// serverless_dpipe_t *srcpipe = serverless_dpipe_lookup(filterpipe[0]);
+	// serverless_dpipe_t *dstpipe = serverless_dpipe_lookup(filterpipe[1]);
 	serverless_dpipe_buffer_t *srcdata = NULL;
 	serverless_dpipe_buffer_t *dstdata = NULL;
 	vsource_frame_t *srcframe = NULL;
@@ -215,15 +226,50 @@ filter_RGB2YUV_threadproc(void *arg) {
 		// wait for notification
 		srcdata = serverless_dpipe_load(srcpipe, NULL);
 		if(srcdata == NULL) {
-			ga_error("RGB2YUV filter: unexpected NULL frame received (from '%s').\n",
-				srcpipe->name);
-			exit(-1);
-			// should never be here
-			goto filter_quit;
+			// ga_error("RGB2YUV filter: unexpected NULL frame received (from '%s').\n",
+			// 	srcpipe->name);
+			// exit(-1);
+			// // should never be here
+			// goto filter_quit;
+			continue;
 		}
+		// {
+		// 	// // Assuming buf is the pointer to your image buffer
+		// 	// int width = 640;
+		// 	// int height = 480;
+
+		// 	// // Check a pixel at position (x, y)
+		// 	// int x = 100;
+		// 	// int y = 200;
+		// 	// int bytesPerPixel = 4;
+
+		// 	// unsigned char *pixel = srcdata->pointer->imgbuf + (y * width + x) * bytesPerPixel;
+
+		// 	// // Verify that each channel is set to 255
+		// 	// ga_error("weofjoiwejf %d\n", pixel[0]);
+		// 	// assert(pixel[0] == 255); // Blue
+		// 	// assert(pixel[1] == 255); // Green
+		// 	// assert(pixel[2] == 255); // Red
+		// 	// assert(pixel[3] == 255); // Alpha
+		// 	size_t imgSize = srcdata->pointer->imgbufsize;
+		// 	unsigned int sum = 0;
+
+		// 	for (size_t i = 0; i < imgSize; ++i) {
+		// 		sum += srcdata->pointer->imgbuf[i];
+		// 	}
+
+		// 	// Verify that the sum matches the expected total for the image data
+		// 	assert(sum == 255*imgSize);
+
+		// 	ga_error("Fuck this shit i am out 2\n");
+		// }
+
+
 		srcframe = (vsource_frame_t*) srcdata->pointer;
+	
 		//
 		dstdata = serverless_dpipe_get(dstpipe);
+		dstdata->pointer = (vsource_frame_t*) malloc(sizeof(vsource_frame_t));
 		dstframe = (vsource_frame_t*) dstdata->pointer;
 		// basic info
 		dstframe->imgpts = srcframe->imgpts;
@@ -234,6 +280,7 @@ filter_RGB2YUV_threadproc(void *arg) {
 		dstframe->realstride = outputW;
 		dstframe->realsize = outputW * outputH * 3 / 2;
 		// scale image: RGBA, BGRA, or YUV
+
 		swsctx = lookup_frame_converter(
 				srcframe->realwidth,
 				srcframe->realheight,
@@ -255,6 +302,7 @@ filter_RGB2YUV_threadproc(void *arg) {
 				srcframe->realwidth, srcframe->realheight, srcframe->pixelformat,
 				dstframe->realwidth, dstframe->realheight, dstframe->pixelformat);
 		}
+		srcframe->pixelformat = AV_PIX_FMT_BGRA;
 		//
 		if(srcframe->pixelformat == AV_PIX_FMT_RGBA
 		|| srcframe->pixelformat == AV_PIX_FMT_BGRA/*rgba*/) {
@@ -276,18 +324,39 @@ filter_RGB2YUV_threadproc(void *arg) {
 			exit(-1);
 		}
 		//
-		dst[0] = dstframe->imgbuf;
-		dst[1] = dstframe->imgbuf + outputH*outputW;
-		dst[2] = dstframe->imgbuf + outputH*outputW + (outputH*outputW>>2);
-		dst[3] = NULL;
-		dstframe->linesize[0] = dststride[0] = outputW;
-		dstframe->linesize[1] = dststride[1] = outputW>>1;
-		dstframe->linesize[2] = dststride[2] = outputW>>1;
-		dstframe->linesize[3] = dststride[3] = 0;
+		// dstframe->imgbufsize = 640 * 480 * 3;
+		// dstframe->imgbuf = (unsigned char*) malloc(dstframe->imgbufsize * sizeof(unsigned char));
+		// dst[0] = dstframe->imgbuf;
+		// dst[1] = dstframe->imgbuf + outputH*outputW;
+		// dst[2] = dstframe->imgbuf + outputH*outputW + (outputH*outputW>>2);
+		// dst[3] = NULL;
+		AVFrame* bgraFrame = av_frame_alloc();
+		AVFrame *yuvFrame = av_frame_alloc();
+
+		bgraFrame->width = 640;
+		bgraFrame->height = 480;
+		bgraFrame->format = AV_PIX_FMT_BGRA;
+		bgraFrame->data[0] = srcframe->imgbuf;
+		bgraFrame->linesize[0] = 640 * 4;
+
+		yuvFrame->width = 640;
+		yuvFrame->height = 480;
+		yuvFrame->format = AV_PIX_FMT_YUV420P;
+		av_frame_get_buffer(yuvFrame, 32);
+		// dstframe->linesize[0] = yuvFrame->linesize[0];
+		// dstframe->linesize[1] = yuvFrame->linesize[1];
+		// dstframe->linesize[2] = yuvFrame->linesize[2];
+		// dstframe->linesize[3] = NULL;
 		//
-		sws_scale(swsctx,
-			src, srcstride, 0, srcframe->realheight,
-			dst, dstframe->linesize);
+		sws_scale(swsctx, bgraFrame->data, bgraFrame->linesize, 0, 480, yuvFrame->data, yuvFrame->linesize);
+
+		dstframe->imgbufsize = 640 * 480 + (640 / 2) * (480 / 2) * 2;
+		dstframe->imgbuf = (unsigned char*) malloc (640 * 480 + (640 / 2) * (480 / 2) * 2);
+		if (yuvFrame->data[0] == NULL) {
+			continue;
+		}
+		memcpy(dstframe->imgbuf, yuvFrame->data[0], 640 * 480 + (640 / 2) * (480 / 2) * 2);
+	
 		// embed first, and then save
 #ifdef ENABLE_EMBED_COLORCODE
 		vsource_embed_colorcode_inc(dstframe);

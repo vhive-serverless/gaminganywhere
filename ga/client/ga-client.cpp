@@ -58,8 +58,8 @@ using namespace std;
 
 #define	POOLSIZE	16
 
-#define	IDLE_MAXIMUM_THRESHOLD		3600000	/* us */
-#define	IDLE_DETECTION_THRESHOLD	 600000 /* us */
+#define	IDLE_MAXIMUM_THRESHOLD		36000000	/* us */
+#define	IDLE_DETECTION_THRESHOLD	 6000009 /* us */
 
 #define	WINDOW_TITLE		"Player Channel #%d (%dx%d)"
 
@@ -152,11 +152,11 @@ create_overlay(struct RTSPThreadParam *rtspParam, int ch) {
 	char pipename[64];
 	//
 	pthread_mutex_lock(&rtspParam->surfaceMutex[ch]);
-	if(rtspParam->surface[ch] != NULL) {
-		pthread_mutex_unlock(&rtspParam->surfaceMutex[ch]);
-		rtsperror("ga-client: duplicated create window request - image comes too fast?\n");
-		return;
-	}
+	// if(rtspParam->surface[ch] != NULL) {
+	// 	pthread_mutex_unlock(&rtspParam->surfaceMutex[ch]);
+	// 	rtsperror("ga-client: duplicated create window request - image comes too fast?\n");
+	// 	return;
+	// }
 	w = rtspParam->width[ch];
 	h = rtspParam->height[ch];
 	format = rtspParam->format[ch];
@@ -169,7 +169,7 @@ create_overlay(struct RTSPThreadParam *rtspParam, int ch) {
 	// pipeline
 	snprintf(pipename, sizeof(pipename), "channel-%d", ch);
 	if((pipe = dpipe_create(ch, pipename, POOLSIZE, sizeof(AVPicture))) == NULL) {
-		rtsperror("ga-client: cannot create pipeline.\n");
+		rtsperror("ga-client: cannot create pipeline channel %d and pipename %s.\n", ch, pipename);
 		exit(-1);
 	}
 	for(data = pipe->in; data != NULL; data = data->next) {
@@ -659,6 +659,7 @@ watchdog_thread(void *args) {
 			d = tvdiff_us(&tv, &watchdogTimer);
 			if(d > IDLE_MAXIMUM_THRESHOLD) {
 				rtspThreadParam.running = false;
+				ga_error("TOOO LONG BITCH\n");
 				break;
 			} else if(d > IDLE_DETECTION_THRESHOLD) {
 				// update message and show

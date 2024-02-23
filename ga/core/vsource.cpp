@@ -130,6 +130,7 @@ vsource_dup_frame(vsource_frame_t *src, vsource_frame_t *dst) {
 	dst->realheight = src->realheight;
 	dst->realstride = src->realstride;
 	dst->realsize = src->realsize;
+	ga_error("Duplicating frame, realsize: %d", dst->realsize);
 	bcopy(src->imgbuf, dst->imgbuf, src->realstride * src->realheight/*dst->imgbufsize*/);
 	return;
 }

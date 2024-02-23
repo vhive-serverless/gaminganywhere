@@ -1,12 +1,12 @@
 #!/bin/bash
 
-. env-setup.sh
+# . env-setup
 
-sudo ln -s /usr/include/locale.h /usr/include/xlocale.h
+ln -s /usr/include/locale.h /usr/include/xlocale.h
 
 cd deps.src
 
-make
+make all
 
 cd ../ga
 

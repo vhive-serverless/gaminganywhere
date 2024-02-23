@@ -85,6 +85,10 @@ vsource_init(void *arg) {
 	ga_error("Initialized vsource\n");
 	struct RTSPConf *rtspconf = rtspconf_global();
 	struct gaRect *rect = (struct gaRect*) arg;
+	int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+	int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+	serverless_dpipe_create(0, "video-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	serverless_dpipe_create(0, "filter-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
 	
 	//
 	if(vsource_initialized != 0)
@@ -211,7 +215,7 @@ vsource_threadproc(void *arg) {
 	gettimeofday(&initialTv, NULL);
 	lastTv = initialTv;
 	token = frame_interval;
-	vsource_started = 1;
+	// vsource_started = 1;
 	while(vsource_started != 0) {
 		// encoder has not launched?
 		if(encoder_running() == 0) {
@@ -243,6 +247,7 @@ vsource_threadproc(void *arg) {
 		token -= frame_interval;
 		// copy image 
 		data = serverless_dpipe_get(pipe[0]);
+		data->pointer = (vsource_frame_t*) malloc(sizeof(vsource_frame_t));
 		frame = (vsource_frame_t*) data->pointer;
 #ifdef __APPLE__
 		frame->pixelformat = AV_PIX_FMT_RGBA;
@@ -265,6 +270,9 @@ vsource_threadproc(void *arg) {
 		////////////////////////////////////////
 		}
 		frame->linesize[0] = frame->realstride/*frame->stride*/;
+		
+		frame->imgbufsize = 640 * 480 * 4;
+		frame->imgbuf = (unsigned char*) malloc(frame->imgbufsize * sizeof(unsigned char));
 #ifdef WIN32
 	#ifdef D3D_CAPTURE
 		ga_win32_D3D_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
@@ -293,17 +301,32 @@ vsource_threadproc(void *arg) {
 		vsource_embed_colorcode_inc(frame);
 #endif
 		// duplicate from channel 0 to other channels
-		for(i = 1; i < SOURCES; i++) {
-			serverless_dpipe_buffer_t *dupdata;
-			vsource_frame_t *dupframe;
-			dupdata = serverless_dpipe_get(pipe[i]);
-			dupframe = dupdata->pointer;
-			//
-			vsource_dup_frame(frame, dupframe);
-			//
-			serverless_dpipe_store(pipe[i], dupdata);
-		}
+		// {
+		// 				// Assuming buf is the pointer to your image buffer
+		// 	size_t bufferSize = frame->imgbufsize;
+		// 	unsigned int sum = 0;
+
+		// 	for (size_t i = 0; i < bufferSize; ++i) {
+		// 		sum += frame->imgbuf[i];
+		// 	}
+
+		// 	// Verify that the sum matches the expected total for an all-white image
+		// 	assert(sum == 255 * bufferSize);
+		// 	ga_error("Fuck this shit\n");
+		// }
+		// for(i = 1; i < SOURCES; i++) {
+		// 	serverless_dpipe_buffer_t *dupdata;
+		// 	vsource_frame_t *dupframe;
+		// 	dupdata = serverless_dpipe_get(pipe[i]);
+		// 	dupframe = dupdata->pointer;
+		// 	//
+		// 	vsource_dup_frame(frame, dupframe);
+		// 	//
+		// 	serverless_dpipe_store(pipe[i], dupdata);
+		// }
 		serverless_dpipe_store(pipe[0], data);
+		ga_error("Sending Source Frame: width=%d, height=%d, format=%d, size=%d\n",
+       data->pointer->realwidth, data->pointer->realheight, data->pointer->pixelformat, data->pointer->realsize);
 		// reconfigured?
 		if(vsource_reconfigured != 0) {
 			frame_interval = (int) (1000000.0 * vsource_framerate_d / vsource_framerate_n);

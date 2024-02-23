@@ -6,6 +6,7 @@ using namespace std;
 static Redis* redis = nullptr;
 
 unordered_map<const char*, serverless_dpipe_t*> dpipemap;
+static pthread_mutex_t serverless_dpipemap_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 serverless_dpipe_t*	serverless_dpipe_create(int id, const char *name, int nframe, int maxframesize) {
@@ -16,14 +17,18 @@ serverless_dpipe_t*	serverless_dpipe_create(int id, const char *name, int nframe
 	dpipe->name = name;
 	dpipe->nframe = nframe;
     dpipe->channel_id = id;
+    // pthread_mutex_lock(&serverless_dpipemap_mutex);
     dpipemap[name] = dpipe;
+    // pthread_mutex_unlock(&serverless_dpipemap_mutex);
 	return dpipe;
 }
 
 serverless_dpipe_t*	serverless_dpipe_lookup(const char *name) {
+    // pthread_mutex_lock(&serverless_dpipemap_mutex);
 	if (dpipemap.find(name) == dpipemap.end()) return nullptr;
-    ga_error("%s \n", dpipemap[name]);
-	return dpipemap[name];
+	auto res = dpipemap[name];
+    // pthread_mutex_unlock(&serverless_dpipemap_mutex);
+    return res;
 }
 
 int serverless_dpipe_destroy(serverless_dpipe_t* dpipe) {
@@ -44,6 +49,28 @@ void serverless_dpipe_put(serverless_dpipe_t* dpipe, serverless_dpipe_buffer_t *
 void serialize(serverless_dpipe_buffer_t& data, std::string& buffer) {
     vsource_frame_t* frame = data.pointer;
     if (frame == nullptr) return;
+
+    // {
+    //     // Assuming buf is the pointer to your image buffer
+    //     int width = 640;
+    //     int height = 480;
+
+    //     // Check a pixel at position (x, y)
+    //     int x = 100;
+    //     int y = 200;
+    //     int bytesPerPixel = 4;
+
+    //     unsigned char *pixel = frame->imgbuf + (y * width + x) * bytesPerPixel;
+
+    //     // Verify that each channel is set to 255
+    //     ga_error("FUcoweifjw %d\n", pixel[0]);
+    //     assert(pixel[0] == 255); // Blue
+    //     assert(pixel[1] == 255); // Green
+    //     assert(pixel[2] == 255); // Red
+    //     assert(pixel[3] == 255); // Alpha
+
+    //     ga_error("Fuck this shit i am out \n");
+    // }
 
     auto channelptr = reinterpret_cast<char*>(&frame->channel);
     auto imgptsptr = reinterpret_cast<char*>(&frame->imgpts);
@@ -68,6 +95,9 @@ void serialize(serverless_dpipe_buffer_t& data, std::string& buffer) {
     std::copy(maxstrideptr, maxstrideptr + sizeof(frame->maxstride), std::back_inserter(buffer));
     std::copy(imgbufsizeptr, imgbufsizeptr + sizeof(frame->imgbufsize), std::back_inserter(buffer));
     std::copy(imgbufptr, imgbufptr + frame->imgbufsize, std::back_inserter(buffer));
+
+    // assert(buffer[buffer.size()-1] == 255);
+    // ga_error("Die fkuerswad\n");
 }
 
 void deserialize(serverless_dpipe_buffer_t& data, std::string& buffer) {
@@ -118,7 +148,6 @@ serverless_dpipe_buffer_t* serverless_dpipe_load(serverless_dpipe_t* dpipe, cons
             cur = cur->next;
         }
     }
-
     return head;
 }
 
@@ -126,12 +155,10 @@ void serverless_dpipe_store(serverless_dpipe_t *dpipe, serverless_dpipe_buffer_t
 	serverless_dpipe_buffer_t* cur = buffer;
     int i = 0;
     std::string raw;
-	while (cur) {
-		if (cur->pointer != nullptr) {
-            serialize(*cur, raw);
-            redis->lpush(dpipe->name, raw);
-            raw.clear();
-        };
-		cur = cur->next;
-	}
+    raw.reserve(buffer->pointer->realsize * 3);
+    if (cur && cur->pointer != nullptr) {
+        raw.clear();
+        serialize(*cur, raw);
+        redis->lpush(dpipe->name, raw);
+    }
 }
