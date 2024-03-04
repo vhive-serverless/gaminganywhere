@@ -331,7 +331,6 @@ vencoder_threadproc(void *arg) {
 		// 	assert(frame->imgbuf[Y_index] >= 0 && frame->imgbuf[Y_index] <= 255); // Y (luma)
 		// 	assert(frame->imgbuf[U_index] >= 0 && frame->imgbuf[U_index] <= 255); // U (chroma)
 		// 	assert(frame->imgbuf[V_index] >= 0 && frame->imgbuf[V_index] <= 255); // V (chroma)
-		// 	ga_error("Fuck this shit 3\n");
 		// }
 		// handle pts
 		if(basePts == -1LL) {
@@ -443,7 +442,7 @@ vencoder_start(void *arg) {
 	if(vencoder_started != 0)
 		return 0;
 	vencoder_started = 1;
-	for(iid = 0; iid < video_source_channels(); iid++) {
+	for(iid = 0; iid < 1; iid++) {
 		snprintf(pipename[iid], MAXPARAMLEN, pipefmt, iid);
 		if(pthread_create(&vencoder_tid[iid], NULL, vencoder_threadproc, pipename[iid]) != 0) {
 			vencoder_started = 0;

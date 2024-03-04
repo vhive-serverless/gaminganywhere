@@ -719,17 +719,17 @@ main(int argc, char *argv[]) {
 	// enable logging
 	ga_openlog();
 	//
-	if(ga_conf_readbool("control-relative-mouse-mode", 0) != 0) {
-		rtsperror("*** Relative mouse mode enabled.\n");
-		relativeMouseMode = 1;
-	}
+	// if(ga_conf_readbool("control-relative-mouse-mode", 0) != 0) {
+	// 	rtsperror("*** Relative mouse mode enabled.\n");
+	// 	relativeMouseMode = 1;
+	// }
 	//
-	if(ga_conf_readv("save-key-timestamp", savefile_keyts, sizeof(savefile_keyts)) != NULL) {
-		savefp_keyts = ga_save_init_txt(savefile_keyts);
-		rtsperror("*** SAVEFILE: key timestamp saved fo '%s'\n",
-			savefp_keyts ? savefile_keyts : "NULL");
-	}
-	//
+	// if(ga_conf_readv("save-key-timestamp", savefile_keyts, sizeof(savefile_keyts)) != NULL) {
+	// 	savefp_keyts = ga_save_init_txt(savefile_keyts);
+	// 	rtsperror("*** SAVEFILE: key timestamp saved fo '%s'\n",
+	// 		savefp_keyts ? savefile_keyts : "NULL");
+	// }
+	// //
 	rtspconf = rtspconf_global();
 	if(rtspconf_parse(rtspconf) < 0) {
 		rtsperror("parse configuration failed.\n");
@@ -737,10 +737,10 @@ main(int argc, char *argv[]) {
 	}
 	//
 #if ! defined WIN32 && ! defined __APPLE__ && ! defined ANDROID
-	if(XInitThreads() == 0) {
-		rtsperror("XInitThreads() failed, client terminated.\n");
-		return -1;
-	}
+	// if(XInitThreads() == 0) {
+	// 	rtsperror("XInitThreads() failed, client terminated.\n");
+	// 	return -1;
+	// }
 #endif
 #ifndef ANDROID
 	// init fonts
@@ -761,32 +761,32 @@ main(int argc, char *argv[]) {
 		inet_ntoa(rtspconf->sin.sin_addr),
 		rtspconf->serverport);
 	//
-	if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-		rtsperror("SDL init failed: %s\n", SDL_GetError());
-		return -1;
-	}
-	if(rtspconf->video_renderer_software == 0) {
-		ga_error("SDL: prefer opengl hardware renderer.\n");
-		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-	}
+	// if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+	// 	rtsperror("SDL init failed: %s\n", SDL_GetError());
+	// 	return -1;
+	// }
+	// if(rtspconf->video_renderer_software == 0) {
+	// 	ga_error("SDL: prefer opengl hardware renderer.\n");
+	// 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+	// }
 #if 0	// only support SDL2
 	// enable keyboard repeat?
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+	// SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 #endif
 	// launch controller?
-	do if(rtspconf->ctrlenable) {
-		if(ctrl_queue_init(32768, sizeof(sdlmsg_t)) < 0) {
-			rtsperror("Cannot initialize controller queue, controller disabled.\n");
-			rtspconf->ctrlenable = 0;
-			break;
-		}
-		if(pthread_create(&ctrlthread, NULL, ctrl_client_thread, rtspconf) != 0) {
-			rtsperror("Cannot create controller thread, controller disabled.\n");
-			rtspconf->ctrlenable = 0;
-			break;
-		}
-		pthread_detach(ctrlthread);
-	} while(0);
+	// do if(rtspconf->ctrlenable) {
+	// 	if(ctrl_queue_init(32768, sizeof(sdlmsg_t)) < 0) {
+	// 		rtsperror("Cannot initialize controller queue, controller disabled.\n");
+	// 		rtspconf->ctrlenable = 0;
+	// 		break;
+	// 	}
+	// 	if(pthread_create(&ctrlthread, NULL, ctrl_client_thread, rtspconf) != 0) {
+	// 		rtsperror("Cannot create controller thread, controller disabled.\n");
+	// 		rtspconf->ctrlenable = 0;
+	// 		break;
+	// 	}
+	// 	pthread_detach(ctrlthread);
+	// } while(0);
 	// launch watchdog
 	pthread_mutex_init(&watchdogMutex, NULL);
 	if(ga_conf_readbool("enable-watchdog", 1) == 1) {
@@ -812,9 +812,10 @@ main(int argc, char *argv[]) {
 	}
 	pthread_detach(rtspthread);
 	//
+	rtsperror("Running: %d\n", rtspThreadParam.running);
 	while(rtspThreadParam.running) {
 		if(SDL_WaitEvent(&event)) {
-			ProcessEvent(&event);
+			rtsperror("uiewfoiwje\n");
 		}
 	}
 	//
@@ -829,11 +830,11 @@ main(int argc, char *argv[]) {
 #endif
 	//SDL_WaitThread(thread, &status);
 	//
-	if(savefp_keyts != NULL) {
-		ga_save_close(savefp_keyts);
-		savefp_keyts = NULL;
-	}
-	SDL_Quit();
+	// if(savefp_keyts != NULL) {
+	// 	ga_save_close(savefp_keyts);
+	// 	savefp_keyts = NULL;
+	// }
+	// SDL_Quit();
 	ga_deinit();
 	exit(0);
 	//

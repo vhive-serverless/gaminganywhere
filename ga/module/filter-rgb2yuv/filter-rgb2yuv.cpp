@@ -96,24 +96,6 @@ filter_RGB2YUV_init(void *arg) {
 		outputH = video_source_out_height(iid);
 		// create default converters
 		ga_error("awefawefawef %s\n", pixelfmt);
-		// if(ga_conf_readv("filter-source-pixelformat", pixelfmt, sizeof(pixelfmt)) != NULL) {
-		// 	if(strcasecmp("rgba", pixelfmt) == 0) {
-		// 		swsctx = create_frame_converter(
-		// 				inputW, inputH, AV_PIX_FMT_RGBA,
-		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
-		// 		ga_error("RGB2YUV filter: RGBA source specified.\n");
-		// 	} else if(strcasecmp("bgra", pixelfmt) == 0) {
-		// 		swsctx = create_frame_converter(
-		// 				inputW, inputH, AV_PIX_FMT_BGRA,
-		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
-		// 		ga_error("RGB2YUV filter: BGRA source specified.\n");
-		// 	} else if(strcasecmp("yuv420p", pixelfmt) == 0) {
-		// 		swsctx = create_frame_converter(
-		// 				inputW, inputH, AV_PIX_FMT_YUV420P,
-		// 				outputW, outputH, AV_PIX_FMT_YUV420P);
-		// 		ga_error("RGB2YUV filter: YUV source specified.\n");
-		// 	}
-		// }
 		if(swsctx == NULL) {
 #ifdef __APPLE__
 			swsctx = create_frame_converter(
@@ -225,48 +207,8 @@ filter_RGB2YUV_threadproc(void *arg) {
 	while(filter_started != 0) {
 		// wait for notification
 		srcdata = serverless_dpipe_load(srcpipe, NULL);
-		if(srcdata == NULL) {
-			// ga_error("RGB2YUV filter: unexpected NULL frame received (from '%s').\n",
-			// 	srcpipe->name);
-			// exit(-1);
-			// // should never be here
-			// goto filter_quit;
-			continue;
-		}
-		// {
-		// 	// // Assuming buf is the pointer to your image buffer
-		// 	// int width = 640;
-		// 	// int height = 480;
-
-		// 	// // Check a pixel at position (x, y)
-		// 	// int x = 100;
-		// 	// int y = 200;
-		// 	// int bytesPerPixel = 4;
-
-		// 	// unsigned char *pixel = srcdata->pointer->imgbuf + (y * width + x) * bytesPerPixel;
-
-		// 	// // Verify that each channel is set to 255
-		// 	// ga_error("weofjoiwejf %d\n", pixel[0]);
-		// 	// assert(pixel[0] == 255); // Blue
-		// 	// assert(pixel[1] == 255); // Green
-		// 	// assert(pixel[2] == 255); // Red
-		// 	// assert(pixel[3] == 255); // Alpha
-		// 	size_t imgSize = srcdata->pointer->imgbufsize;
-		// 	unsigned int sum = 0;
-
-		// 	for (size_t i = 0; i < imgSize; ++i) {
-		// 		sum += srcdata->pointer->imgbuf[i];
-		// 	}
-
-		// 	// Verify that the sum matches the expected total for the image data
-		// 	assert(sum == 255*imgSize);
-
-		// 	ga_error("Fuck this shit i am out 2\n");
-		// }
-
-
+		if(srcdata == NULL) continue; // Polling here because no choice, redis is a bad idea
 		srcframe = (vsource_frame_t*) srcdata->pointer;
-	
 		//
 		dstdata = serverless_dpipe_get(dstpipe);
 		dstdata->pointer = (vsource_frame_t*) malloc(sizeof(vsource_frame_t));
@@ -275,10 +217,10 @@ filter_RGB2YUV_threadproc(void *arg) {
 		dstframe->imgpts = srcframe->imgpts;
 		dstframe->timestamp = srcframe->timestamp;
 		dstframe->pixelformat = AV_PIX_FMT_YUV420P;	//yuv420p;
-		dstframe->realwidth = outputW;
-		dstframe->realheight = outputH;
-		dstframe->realstride = outputW;
-		dstframe->realsize = outputW * outputH * 3 / 2;
+		dstframe->realwidth = 640;
+		dstframe->realheight = 480;
+		dstframe->realstride = 640;
+		dstframe->realsize = 640 * 480 * 3 / 2;
 		// scale image: RGBA, BGRA, or YUV
 
 		swsctx = lookup_frame_converter(
@@ -323,13 +265,6 @@ filter_RGB2YUV_threadproc(void *arg) {
 			ga_error("filter-RGB2YUV: unsupported pixel format (%d)\n", srcframe->pixelformat);
 			exit(-1);
 		}
-		//
-		// dstframe->imgbufsize = 640 * 480 * 3;
-		// dstframe->imgbuf = (unsigned char*) malloc(dstframe->imgbufsize * sizeof(unsigned char));
-		// dst[0] = dstframe->imgbuf;
-		// dst[1] = dstframe->imgbuf + outputH*outputW;
-		// dst[2] = dstframe->imgbuf + outputH*outputW + (outputH*outputW>>2);
-		// dst[3] = NULL;
 		AVFrame* bgraFrame = av_frame_alloc();
 		AVFrame *yuvFrame = av_frame_alloc();
 
@@ -343,11 +278,6 @@ filter_RGB2YUV_threadproc(void *arg) {
 		yuvFrame->height = 480;
 		yuvFrame->format = AV_PIX_FMT_YUV420P;
 		av_frame_get_buffer(yuvFrame, 32);
-		// dstframe->linesize[0] = yuvFrame->linesize[0];
-		// dstframe->linesize[1] = yuvFrame->linesize[1];
-		// dstframe->linesize[2] = yuvFrame->linesize[2];
-		// dstframe->linesize[3] = NULL;
-		//
 		sws_scale(swsctx, bgraFrame->data, bgraFrame->linesize, 0, 480, yuvFrame->data, yuvFrame->linesize);
 
 		dstframe->imgbufsize = 640 * 480 + (640 / 2) * (480 / 2) * 2;
@@ -403,7 +333,7 @@ filter_RGB2YUV_start(void *arg) {
 	if(filter_started != 0)
 		return 0;
 	filter_started = 1;
-	for(iid = 0; iid < video_source_channels(); iid++) {
+	for(iid = 0; iid < 1; iid++) {
 		snprintf(params[iid][0], MAXPARAMLEN, filterpipe[0], iid);
 		snprintf(params[iid][1], MAXPARAMLEN, filterpipe[1], iid);
 		filter_param[iid][0] = params[iid][0];

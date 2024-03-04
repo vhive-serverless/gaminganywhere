@@ -6,10 +6,10 @@ ln -s /usr/include/locale.h /usr/include/xlocale.h
 
 cd deps.src
 
-make all
+make
 
 cd ../ga
 
-make
+make all
 
 make install

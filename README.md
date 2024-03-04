@@ -37,6 +37,10 @@ can be ported to other OS's including OS X and Android.
 		libpulse-dev libasound2-dev lib32z1
   ```
 
+# Settings
+In all Dockerfile, change "/users/yankai14/gaminganywhere" to your own gaminganywhere directory.
+In env-setup change your LD_LIBRARY_PATH to the correct path that points to deps.posix/lib.
+
 # To run headless
 Compile binaries
 ```
@@ -51,4 +55,15 @@ Run client
 Run server
 ```
 ./run-server.sh
+```
+
+# Run on docker-compose
+```
+docker-compose build
+docker-compose up -d
+```
+
+# Run on knative
+```
+kubectl apply -f kn-gaminganywhere.yml
 ```

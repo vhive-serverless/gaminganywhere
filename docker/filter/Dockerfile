@@ -1,9 +1,9 @@
 # Server DockerFile
-FROM ubuntu:23.10
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspace/deps.posix/lib:/usr/local/lib
-ENV GADEPS=/workspace/deps.posix
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/users/yankai14/gaminganywhere/deps.posix/lib:/usr/local/lib
+ENV GADEPS=/users/yankai14/gaminganywhere/deps.posix
 ENV PKG_CONFIG_PATH=$GADEPS/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/i386-linux-gnu/pkgconfig/:/usr/lib/pkgconfig
 ENV PATH=$GADEPS/bin:$PATH
 
@@ -11,13 +11,13 @@ ENV PATH=$GADEPS/bin:$PATH
 RUN apt-get update &&  apt-get install -y patch make cmake g++ pkg-config \
   	libx11-dev libxext-dev libxtst-dev libfreetype6-dev \
   	libgl1-mesa-dev libglu1-mesa-dev \
-  	libpulse-dev libasound2-dev lib32z1 git
+  	libpulse-dev libasound2-dev lib32z1 git lsb-release curl gpg redis bzip2
 
-WORKDIR /workspace
+WORKDIR /users/yankai14/gaminganywhere
 
 # Install redis cpp sdk
-RUN mkdir /temp \
-    && cd /temp \
+RUN mkdir temp \
+    && cd temp \
     && git clone https://github.com/redis/hiredis.git \
     && cd hiredis \
     && make \
@@ -32,14 +32,10 @@ RUN mkdir /temp \
     && make install \
     && cd ..
 
-COPY . /workspace
+COPY . /users/yankai14/gaminganywhere
 
-RUN mkdir -p /workspace/deps.posix
+RUN mkdir -p /users/yankai14/gaminganywhere/deps.posix
 
-# Compilation
-RUN ./setup.sh && chmod +x run-server.sh
+RUN ./setup.sh && chmod +x run-server1.sh
 
-# Run executable
-EXPOSE 50051
-
-# ENTRYPOINT ["/bin/bash", "-c", "./run-server.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "./run-server1.sh"]

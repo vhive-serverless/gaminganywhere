@@ -2,4 +2,4 @@
 
 cd bin
 
-./ga-server-periodic rtsp://server-address:server-port/desktop
+./ga-server-periodic ./config/server.desktop.conf 

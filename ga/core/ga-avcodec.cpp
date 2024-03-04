@@ -165,7 +165,7 @@ ga_avcodec_vencoder_init(AVCodecContext *ctx, AVCodec *codec, int width, int hei
 	/* always enable GLOBAL HEADER
 	 * - required header should be passed via something like
 	 * - sprop-parameter-sets in SDP descriptions */
-	ctx->flags |= CODEC_FLAG_GLOBAL_HEADER;
+	ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 #ifdef WIN32
 	ctx->time_base.num = 1;
 	ctx->time_base.den = fps;

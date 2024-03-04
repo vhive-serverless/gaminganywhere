@@ -217,17 +217,6 @@ vsource_threadproc(void *arg) {
 	token = frame_interval;
 	// vsource_started = 1;
 	while(vsource_started != 0) {
-		// encoder has not launched?
-		if(encoder_running() == 0) {
-#ifdef WIN32
-			Sleep(1);
-#else
-			usleep(1000);
-#endif
-			gettimeofday(&lastTv, NULL);
-			token = frame_interval;
-			continue;
-		}
 		// token bucket based capturing
 		gettimeofday(&captureTv, NULL);
 		token += tvdiff_us(&captureTv, &lastTv);
@@ -300,30 +289,6 @@ vsource_threadproc(void *arg) {
 #ifdef ENABLE_EMBED_COLORCODE
 		vsource_embed_colorcode_inc(frame);
 #endif
-		// duplicate from channel 0 to other channels
-		// {
-		// 				// Assuming buf is the pointer to your image buffer
-		// 	size_t bufferSize = frame->imgbufsize;
-		// 	unsigned int sum = 0;
-
-		// 	for (size_t i = 0; i < bufferSize; ++i) {
-		// 		sum += frame->imgbuf[i];
-		// 	}
-
-		// 	// Verify that the sum matches the expected total for an all-white image
-		// 	assert(sum == 255 * bufferSize);
-		// 	ga_error("Fuck this shit\n");
-		// }
-		// for(i = 1; i < SOURCES; i++) {
-		// 	serverless_dpipe_buffer_t *dupdata;
-		// 	vsource_frame_t *dupframe;
-		// 	dupdata = serverless_dpipe_get(pipe[i]);
-		// 	dupframe = dupdata->pointer;
-		// 	//
-		// 	vsource_dup_frame(frame, dupframe);
-		// 	//
-		// 	serverless_dpipe_store(pipe[i], dupdata);
-		// }
 		serverless_dpipe_store(pipe[0], data);
 		ga_error("Sending Source Frame: width=%d, height=%d, format=%d, size=%d\n",
        data->pointer->realwidth, data->pointer->realheight, data->pointer->pixelformat, data->pointer->realsize);

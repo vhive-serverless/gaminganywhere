@@ -3,7 +3,7 @@
 // Define a mock frame generator function
 void generate_mock_frame(char *buf, int buflen, struct gaRect *rect) {
     // For demonstration purposes, let's fill the buffer with a constant color (e.g., white).
-    memset(buf, 150, buflen);
+    memset(buf, 255, buflen);
 }
 
 int ga_loadgen_init(gaImage *gaimg) {
