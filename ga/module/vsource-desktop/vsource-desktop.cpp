@@ -216,7 +216,8 @@ vsource_threadproc(void *arg) {
 	lastTv = initialTv;
 	token = frame_interval;
 	// vsource_started = 1;
-	while(vsource_started != 0) {
+	int count = 0;
+	while(vsource_started != 0 && count < 100) {
 		// token bucket based capturing
 		gettimeofday(&captureTv, NULL);
 		token += tvdiff_us(&captureTv, &lastTv);
@@ -300,6 +301,7 @@ vsource_threadproc(void *arg) {
 			ga_error("video source: reconfigured - framerate=%d/%d (interval=%d)\n",
 				vsource_framerate_n, vsource_framerate_d, frame_interval);
 		}
+		++count;
 	}
 	//
 	ga_error("video source: thread terminated.\n");

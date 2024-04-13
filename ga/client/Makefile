@@ -1,6 +1,16 @@
 
 include ../Makefile.def
 
+# gRPC-related variables
+GRPC_INCLUDE = /usr/include/grpc  # Update this path according to your system
+GRPC_LIB = /usr/local/lib  # Update this path according to your system
+
+# Append gRPC-related flags to existing CFLAGS
+CFLAGS += -I$(GRPC_INCLUDE)
+
+# Append gRPC-related flags to existing LDFLAGS
+LDFLAGS += -L$(GRPC_LIB) -lgrpc++ -lgrpc -lprotobuf
+
 CFLAGS	+= -I../core $(AVCCF) $(L5CF) $(SDLCF)
 LDFLAGS	= $(EXTRALDFLAGS) -L../core -lga $(AVCLD) $(SDLLD) $(L5LD) -Wl,-rpath,\$$ORIGIN
 
@@ -24,7 +34,7 @@ all: $(TARGET)
 .cpp.o:
 	$(CXX) -c -g $(CXXFLAGS) $<
 
-ga-client: ga-client.o rtspclient.o ctrl-sdl.o minih264.o minivp8.o qosreport.o
+ga-client: ga-client.o rtspclient.o ctrl-sdl.o minih264.o minivp8.o qosreport.o gaminganywhere.pb.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 install: $(TARGET)

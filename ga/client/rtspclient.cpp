@@ -1066,7 +1066,6 @@ play_video(int channel, unsigned char *buffer, int bufsize, struct timeval pts, 
 	// 		pdb->privbuflen = 0;
 	// 	}
 	// }
-	rtsperror("Got him\n");
 #ifdef ANDROID
 	}
 #endif

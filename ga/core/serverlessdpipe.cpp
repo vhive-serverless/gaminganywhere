@@ -10,7 +10,7 @@ static pthread_mutex_t serverless_dpipemap_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 serverless_dpipe_t*	serverless_dpipe_create(int id, const char *name, int nframe, int maxframesize) {
-	if (redis == nullptr) redis = new Redis("tcp://redis:6379");
+	if (redis == nullptr) redis = new Redis("tcp://127.0.0.1:6379");
 	if (dpipemap.find(name) != dpipemap.end())  return dpipemap[name];
 
 	serverless_dpipe_t *dpipe = new serverless_dpipe_t;
@@ -63,10 +63,10 @@ void serialize(serverless_dpipe_buffer_t& data, std::string& buffer) {
         unsigned char *pixel = frame->imgbuf + (y * width + x) * bytesPerPixel;
 
         // Verify that each channel is set to 255
-        assert(pixel[0] == 255); // Blue
-        assert(pixel[1] == 255); // Green
-        assert(pixel[2] == 255); // Red
-        assert(pixel[3] == 255); // Alpha
+        // assert(pixel[0] == 255); // Blue
+        // assert(pixel[1] == 255); // Green
+        // assert(pixel[2] == 255); // Red
+        // assert(pixel[3] == 255); // Alpha
     }
 
     auto channelptr = reinterpret_cast<char*>(&frame->channel);

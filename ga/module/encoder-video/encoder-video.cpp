@@ -415,6 +415,7 @@ vencoder_threadproc(void *arg) {
 			if(video_written == 0) {
 				video_written = 1;
 				ga_error("first video frame written (pts=%lld)\n", pts);
+				goto video_quit;
 			}
 		}
 	}

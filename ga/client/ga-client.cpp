@@ -18,7 +18,6 @@
 
 #include <stdarg.h>
 #include <string.h>
-
 #include <pthread.h>
 #include <SDL2/SDL.h>
 #ifndef ANDROID
@@ -659,7 +658,6 @@ watchdog_thread(void *args) {
 			d = tvdiff_us(&tv, &watchdogTimer);
 			if(d > IDLE_MAXIMUM_THRESHOLD) {
 				rtspThreadParam.running = false;
-				ga_error("TOOO LONG BITCH\n");
 				break;
 			} else if(d > IDLE_DETECTION_THRESHOLD) {
 				// update message and show
@@ -815,7 +813,7 @@ main(int argc, char *argv[]) {
 	rtsperror("Running: %d\n", rtspThreadParam.running);
 	while(rtspThreadParam.running) {
 		if(SDL_WaitEvent(&event)) {
-			rtsperror("uiewfoiwje\n");
+			rtspThreadParam.running = false;
 		}
 	}
 	//
