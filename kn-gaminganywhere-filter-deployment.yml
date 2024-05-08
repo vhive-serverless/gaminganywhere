@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ga-filter
+  namespace: default
+spec:
+  type: LoadBalancer  # Change this to the appropriate type if needed
+  ports:
+    - name: rtsp
+      port: 8554
+      targetPort: 8554
+  selector:
+    serving.knative.dev/service: ga-filter

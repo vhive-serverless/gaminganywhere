@@ -3,6 +3,11 @@ GamingAnywhere
 
 GamingAnywhere: An Open Cloud Gaming System
 
+# Prerequisite knowledge
+1. RTSP and RTP for network communication
+2. RGB and YUV image formats and conversion
+3. Marshalling and unmarshalling
+
 # Overview
 
 GamingAnywhere is an open-source clouding gaming platform. In addition to its
@@ -44,7 +49,7 @@ In env-setup change your LD_LIBRARY_PATH to the correct path that points to deps
 # To run headless
 Compile binaries
 ```
-./setup.sh
+sudo ./setup.sh
 ```
 
 Run client
@@ -57,13 +62,18 @@ Run server
 ./run-server.sh
 ```
 
-# Run on docker-compose
+# Run servers on docker-compose
 ```
 docker-compose build
 docker-compose up -d
 ```
 
-# Run on knative
+Then trigger using ./run-client.sh
+
+# Run servers on knative
 ```
-kubectl apply -f kn-gaminganywhere.yml
+kubectl apply -f kn-gaminganywhere-filter.yml
+kubectl apply -f kn-gaminganywhere-vsource.yml
 ```
+Modify ./run-client.sh ./ga-client config/client.rel.conf rtsp://<host>:<port>/desktop
+Then trigger using ./run-client.sh

@@ -28,6 +28,8 @@ services:
       - mynetwork
     depends_on:
       - redis
+    ports:
+      - "8554:8554"
 
 networks:
   mynetwork:

@@ -10,7 +10,7 @@ static pthread_mutex_t serverless_dpipemap_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 serverless_dpipe_t*	serverless_dpipe_create(int id, const char *name, int nframe, int maxframesize) {
-	if (redis == nullptr) redis = new Redis("tcp://127.0.0.1:6379");
+	if (redis == nullptr) redis = new Redis("tcp://redis:6379");
 	if (dpipemap.find(name) != dpipemap.end())  return dpipemap[name];
 
 	serverless_dpipe_t *dpipe = new serverless_dpipe_t;

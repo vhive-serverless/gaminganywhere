@@ -1,10 +1,12 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: gaminganywhere-filter
+  name: ga-filter
   namespace: default
 spec:
   template:
     spec:
       containers:
-        - image: karma98/gaminganywhere_ga-filter:latest
+        - image: karma98/ga-filter:latest
+          ports:
+            - containerPort: 8554

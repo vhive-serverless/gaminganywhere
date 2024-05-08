@@ -1,10 +1,10 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: gaminganywhere-vsource
+  name: ga-vsource
   namespace: default
 spec:
   template:
     spec:
       containers:
-        - image: karma98/gaminganywhere_ga-vsource:latest
+        - image: karma98/ga-vsource:latest
