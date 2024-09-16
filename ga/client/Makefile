@@ -1,6 +1,16 @@
 
 include ../Makefile.def
 
+# gRPC-related variables
+GRPC_INCLUDE = /usr/include/grpc  # Update this path according to your system
+GRPC_LIB = /usr/local/lib  # Update this path according to your system
+
+# Append gRPC-related flags to existing CFLAGS
+CFLAGS += -I$(GRPC_INCLUDE)
+
+# Append gRPC-related flags to existing LDFLAGS
+LDFLAGS += -L$(GRPC_LIB) -lgrpc++ -lgrpc -lprotobuf
+
 CFLAGS	+= -I../core $(AVCCF) $(L5CF) $(SDLCF)
 LDFLAGS	= $(EXTRALDFLAGS) -L../core -lga $(AVCLD) $(SDLLD) $(L5LD) -Wl,-rpath,\$$ORIGIN
 

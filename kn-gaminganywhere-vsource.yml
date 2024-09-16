@@ -1,0 +1,10 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ga-vsource
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: karma98/ga-vsource:latest

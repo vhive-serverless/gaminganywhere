@@ -1019,52 +1019,53 @@ play_video(int channel, unsigned char *buffer, int bufsize, struct timeval pts, 
 	} else {
 	//////// Work with ffmpeg
 #endif
-	if(pts.tv_sec != pdb->lastpts.tv_sec
-	|| pts.tv_usec != pdb->lastpts.tv_usec) {
-		if(pdb->privbuflen > 0) {
-			//fprintf(stderr, "DEBUG: video pts=%08ld.%06ld\n",
-			//	lastpts.tv_sec, lastpts.tv_usec);
-			left = play_video_priv(channel, pdb->privbuf,
-				pdb->privbuflen, pdb->lastpts);
-			if(left > 0) {
-				bcopy(pdb->privbuf + pdb->privbuflen - left,
-					pdb->privbuf, left);
-				pdb->privbuflen = left;
-				rtsperror("decoder: %d bytes left, preserved for next round\n", left);
-			} else {
-				pdb->privbuflen = 0;
-			}
-		}
-		pdb->lastpts = pts;
-	}
-	if(pdb->privbuflen + bufsize <= PRIVATE_BUFFER_SIZE) {
-		bcopy(buffer, &pdb->privbuf[pdb->privbuflen], bufsize);
-		pdb->privbuflen += bufsize;
-		if(marker && pdb->privbuflen > 0) {
-			left = play_video_priv(channel, pdb->privbuf,
-				pdb->privbuflen, pdb->lastpts);
-			if(left > 0) {
-				bcopy(pdb->privbuf + pdb->privbuflen - left,
-					pdb->privbuf, left);
-				pdb->privbuflen = left;
-				rtsperror("decoder: %d bytes left, leave for next round\n", left);
-			} else {
-				pdb->privbuflen = 0;
-			}
-		}
-	} else {
-		rtsperror("WARNING: video private buffer overflow.\n");
-		left = play_video_priv(channel, pdb->privbuf,
-				pdb->privbuflen, pdb->lastpts);
-		if(left > 0) {
-			bcopy(pdb->privbuf + pdb->privbuflen - left,
-				pdb->privbuf, left);
-			pdb->privbuflen = left;
-			rtsperror("decoder: %d bytes left, leave for next round\n", left);
-		} else {
-			pdb->privbuflen = 0;
-		}
-	}
+	// if(pts.tv_sec != pdb->lastpts.tv_sec
+	// || pts.tv_usec != pdb->lastpts.tv_usec) {
+	// 	if(pdb->privbuflen > 0) {
+	// 		//fprintf(stderr, "DEBUG: video pts=%08ld.%06ld\n",
+	// 		//	lastpts.tv_sec, lastpts.tv_usec);
+	// 		// left = play_video_priv(channel, pdb->privbuf,
+	// 		// 	pdb->privbuflen, pdb->lastpts);
+	// 		// if(left > 0) {
+	// 		// 	bcopy(pdb->privbuf + pdb->privbuflen - left,
+	// 		// 		pdb->privbuf, left);
+	// 		// 	pdb->privbuflen = left;
+	// 		// 	rtsperror("decoder: %d bytes left, preserved for next round\n", left);
+	// 		// } else {
+	// 		// 	pdb->privbuflen = 0;
+	// 		// }
+	// 		
+	// 	}
+	// 	pdb->lastpts = pts;
+	// }
+	// if(pdb->privbuflen + bufsize <= PRIVATE_BUFFER_SIZE) {
+	// 	bcopy(buffer, &pdb->privbuf[pdb->privbuflen], bufsize);
+	// 	pdb->privbuflen += bufsizrfrdcv e;
+	// 	if(marker && pdb->privbuflen > 0) {
+	// 		left = play_video_priv(channel, pdb->privbuf,
+	// 			pdb->privbuflen, pdb->lastpts);
+	// 		if(left > 0) {
+	// 			bcopy(pdb->privbuf + pdb->privbuflen - left,
+	// 				pdb->privbuf, left);
+	// 			pdb->privbuflen = left;
+	// 			rtsperror("decoder: %d bytes left, leave for next round\n", left);
+	// 		} else {
+	// 			pdb->privbuflen = 0;
+	// 		}
+	// 	}
+	// } else {
+	// 	rtsperror("WARNING: video private buffer overflow.\n");
+	// 	left = play_video_priv(channel, pdb->privbuf,
+	// 			pdb->privbuflen, pdb->lastpts);
+	// 	if(left > 0) {
+	// 		bcopy(pdb->privbuf + pdb->privbuflen - left,
+	// 			pdb->privbuf, left);
+	// 		pdb->privbuflen = left;
+	// 		rtsperror("decoder: %d bytes left, leave for next round\n", left);
+	// 	} else {
+	// 		pdb->privbuflen = 0;
+	// 	}
+	// }
 #ifdef ANDROID
 	}
 #endif
@@ -1334,7 +1335,7 @@ rtsp_thread(void *param) {
 	char savefile_yuv[128];
 	char savefile_yuvts[128];
 	// XXX: reset everything
-	ga_aggregated_reset();
+	ga_aggregated_reset();;
 	drop_video_frame_init(ga_conf_readint("max-tolerable-video-delay"));
 	// save-file features
 	if(savefp_yuv != NULL)

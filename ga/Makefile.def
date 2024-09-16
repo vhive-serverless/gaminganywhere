@@ -27,7 +27,8 @@ CXXFLAGS = $(CFLAGS)
 LDFLAGS	= $(EXTRALDFLAGS) -L$(GADEPS)/lib -Wl,-rpath,\$$ORIGIN
 
 ifeq ($(OS), Linux)
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++17
+CXXFLAGS += -g
 endif
 
 ifeq ($(OS), MSYS)

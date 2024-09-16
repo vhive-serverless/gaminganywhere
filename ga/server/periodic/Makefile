@@ -22,7 +22,7 @@ ifeq ($(OS), Darwin)
 LDFLAGS	+= -framework Cocoa
 endif
 
-TARGET	= ga-server-periodic
+TARGET	= ga-server-periodic ga-server-periodic1
 
 all: $(TARGET)
 
@@ -30,6 +30,9 @@ all: $(TARGET)
 	$(CXX) -c -g $(CXXFLAGS) $<
 
 ga-server-periodic: ga-server-periodic.o 
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+ga-server-periodic1: ga-server-periodic1.o 
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 install: $(TARGET)

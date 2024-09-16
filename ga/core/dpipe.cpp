@@ -49,8 +49,10 @@ dpipe_create(int id, const char *name, int nframe, int maxframesize) {
 	if(name == NULL || id < 0 || nframe <= 0 || maxframesize <= 0)
 		return NULL;
 	// existing?
-	if((dpipe = dpipe_lookup(name)) != NULL)
-		return NULL;
+	if((dpipe = dpipe_lookup(name)) != NULL) {
+		ga_error("Pipename %s already exist\n", name);
+		return dpipe;
+	}
 	// allocate the space
 	if((dpipe = (dpipe_t*) malloc(sizeof(dpipe_t))) == NULL)
 		return NULL;

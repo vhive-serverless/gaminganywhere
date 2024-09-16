@@ -52,10 +52,10 @@ int
 load_modules() {
 	if((m_vsource = ga_load_module("mod/vsource-desktop", "vsource_")) == NULL)
 		return -1;
-	if((m_filter = ga_load_module("mod/filter-rgb2yuv", "filter_RGB2YUV_")) == NULL)
-		return -1;
-	if((m_vencoder = ga_load_module("mod/encoder-video", "vencoder_")) == NULL)
-		return -1;
+	// if((m_filter = ga_load_module("mod/filter-rgb2yuv", "filter_RGB2YUV_")) == NULL)
+	// 	return -1;
+	// if((m_vencoder = ga_load_module("mod/encoder-video", "vencoder_")) == NULL)
+	// 	return -1;
 	if(ga_conf_readbool("enable-audio", 1) != 0) {
 	//////////////////////////
 #ifndef __APPLE__
@@ -66,8 +66,8 @@ load_modules() {
 		return -1;
 	//////////////////////////
 	}
-	if((m_ctrl = ga_load_module("mod/ctrl-sdl", "sdlmsg_replay_")) == NULL)
-		return -1;
+	// if((m_ctrl = ga_load_module("mod/ctrl-sdl", "sdlmsg_replay_")) == NULL)
+	// 	return -1;
 	if((m_server = ga_load_module("mod/server-live555", "live_")) == NULL)
 		return -1;
 	return 0;
@@ -77,15 +77,15 @@ int
 init_modules() {
 	struct RTSPConf *conf = rtspconf_global();
 	//static const char *filterpipe[] = { imagepipe0, filterpipe0 };
-	if(conf->ctrlenable) {
-		ga_init_single_module_or_quit("controller", m_ctrl, (void *) prect);
-	}
+	// if(conf->ctrlenable) {
+	// 	ga_init_single_module_or_quit("controller", m_ctrl, (void *) prect);
+	// }
 	// controller server is built-in - no need to init
 	// note the order of the two modules ...
 	ga_init_single_module_or_quit("video-source", m_vsource, (void*) prect);
-	ga_init_single_module_or_quit("filter", m_filter, (void*) filter_param);
-	//
-	ga_init_single_module_or_quit("video-encoder", m_vencoder, filterpipefmt);
+	// ga_init_single_module_or_quit("filter", m_filter, (void*) filter_param);
+	// //
+	// ga_init_single_module_or_quit("video-encoder", m_vencoder, filterpipefmt);
 	if(ga_conf_readbool("enable-audio", 1) != 0) {
 	//////////////////////////
 #ifndef __APPLE__
@@ -114,8 +114,8 @@ run_modules() {
 	//ga_run_single_module_or_quit("image source", m_vsource->threadproc, (void*) imagepipefmt);
 	if(m_vsource->start(prect) < 0)		exit(-1);
 	//ga_run_single_module_or_quit("filter 0", m_filter->threadproc, (void*) filterpipe);
-	if(m_filter->start(filter_param) < 0)	exit(-1);
-	encoder_register_vencoder(m_vencoder, video_encoder_param);
+	// if(m_filter->start(filter_param) < 0)	exit(-1);
+	// encoder_register_vencoder(m_vencoder, video_encoder_param);
 	// audio
 	if(ga_conf_readbool("enable-audio", 1) != 0) {
 	//////////////////////////
@@ -123,11 +123,11 @@ run_modules() {
 	//ga_run_single_module_or_quit("audio source", m_asource->threadproc, NULL);
 	if(m_asource->start(NULL) < 0)		exit(-1);
 #endif
-	encoder_register_aencoder(m_aencoder, audio_encoder_param);
+	// encoder_register_aencoder(m_aencoder, audio_encoder_param);
 	//////////////////////////
 	}
 	// server
-	if(m_server->start(NULL) < 0)		exit(-1);
+	// if(m_server->start(NULL) < 0)		exit(-1);
 	//
 	return 0;
 }

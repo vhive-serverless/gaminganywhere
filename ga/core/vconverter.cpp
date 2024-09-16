@@ -94,7 +94,7 @@ lookup_frame_converter(int srcw, int srch, AVPixelFormat srcfmt, int dstw, int d
 	//
 	ccfg.src_width = srcw;
 	ccfg.src_height = srch;
-	ccfg.src_fmt = srcfmt;
+	ccfg.src_fmt = AV_PIX_FMT_BGRA;
 	ccfg.dst_width = dstw;
 	ccfg.dst_height = dsth;
 	ccfg.dst_fmt = dstfmt;
@@ -134,7 +134,7 @@ create_frame_converter(int srcw, int srch, AVPixelFormat srcfmt,
 	if((ctx = lookup_frame_converter_internal(&ccfg)) != NULL)
 		return ctx;
 	//
-	if((ctx = sws_getContext(srcw, srch, srcfmt,
+	if((ctx = sws_getContext(srcw, srch, AV_PIX_FMT_BGRA,
 				 dstw, dsth, dstfmt,
 				 SWS_BICUBIC, NULL, NULL, NULL)) == NULL) {
 		return NULL;

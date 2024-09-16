@@ -1,6 +1,7 @@
 #!/bin/sh
 GA_OS=`uname -s`
-export GADEPS=$HOME/myprog/gaminganywhere/deps.posix
+export LD_LIBRARY_PATH=/users/yankai14/gaminganywhere/deps.posix/lib
+export GADEPS=/users/yankai14/gaminganywhere/deps.posix
 case $GA_OS in
 MSYS*)
 	export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig

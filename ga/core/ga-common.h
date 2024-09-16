@@ -56,6 +56,7 @@ extern "C" {
 #endif
 
 #include "ga-win32.h"
+#include "serverlessdpipe.h"
 
 /** Enable audio subsystem? */
 #define	ENABLE_AUDIO

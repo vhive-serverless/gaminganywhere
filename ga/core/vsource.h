@@ -99,7 +99,7 @@ typedef struct pipename_s {
 	struct pipename_s *next;/**< Pointer to next pipename */
 	char name[1];		/**< Name of the pape.
 				 * Length is variable, so must be the last field. */
-}	pipename_t;
+}   pipename_t;
 
 /**
  * Data structure to define a video source.

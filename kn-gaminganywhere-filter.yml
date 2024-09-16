@@ -1,0 +1,12 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ga-filter
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: karma98/ga-filter:latest
+          ports:
+            - containerPort: 8554

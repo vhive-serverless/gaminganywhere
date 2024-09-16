@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  redis:
+    image: redis
+    container_name: redis
+    networks:
+      - mynetwork
+    ports:
+      - "6380:6379"
+
+  ga-vsource:
+    build:
+      context: .
+      dockerfile: ./docker/vsource/Dockerfile
+    container_name: ga-vsource-container
+    networks:
+      - mynetwork
+    depends_on:
+      - redis
+
+  ga-filter:
+    build:
+      context: .
+      dockerfile: ./docker/filter/Dockerfile
+    container_name: ga-filter-container
+    networks:
+      - mynetwork
+    depends_on:
+      - redis
+    ports:
+      - "8554:8554"
+
+networks:
+  mynetwork:
+    driver: bridge

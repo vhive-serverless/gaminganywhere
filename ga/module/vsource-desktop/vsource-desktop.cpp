@@ -26,7 +26,6 @@
 #include <map>
 
 #include "vsource.h"
-#include "dpipe.h"
 #include "encoder-common.h"
 #include "rtspconf.h"
 
@@ -47,6 +46,7 @@
 #include "ga-androidvideo.h"
 #else
 #include "ga-xwin.h"
+#include "ga_loadgen.h"
 #endif
 
 #include "ga-avcodec.h"
@@ -82,8 +82,14 @@ static int vsource_reconfigured = 0;
  */
 static int
 vsource_init(void *arg) {
+	ga_error("Initialized vsource\n");
 	struct RTSPConf *rtspconf = rtspconf_global();
 	struct gaRect *rect = (struct gaRect*) arg;
+	int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+	int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+	serverless_dpipe_create(0, "video-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	serverless_dpipe_create(0, "filter-0", 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+	
 	//
 	if(vsource_initialized != 0)
 		return 0;
@@ -133,7 +139,7 @@ vsource_init(void *arg) {
 		return -1;
 	}
 #else
-	if(ga_xwin_init(rtspconf->display, image) < 0) {
+	if(ga_loadgen_init(image) < 0) {
 		ga_error("XWindow capture init failed.\n");
 		return -1;
 	}
@@ -179,9 +185,9 @@ vsource_threadproc(void *arg) {
 	int token;
 	int frame_interval;
 	struct timeval tv;
-	dpipe_buffer_t *data;
+	serverless_dpipe_buffer_t *data;
 	vsource_frame_t *frame;
-	dpipe_t *pipe[SOURCES];
+	serverless_dpipe_t *pipe[SOURCES];
 	struct timeval initialTv, lastTv, captureTv;
 	struct RTSPConf *rtspconf = rtspconf_global();
 	// reset framerate setup
@@ -197,9 +203,11 @@ vsource_threadproc(void *arg) {
 	for(i = 0; i < SOURCES; i++) {
 		char pipename[64];
 		snprintf(pipename, sizeof(pipename), VIDEO_SOURCE_PIPEFORMAT, i);
-		if((pipe[i] = dpipe_lookup(pipename)) == NULL) {
-			ga_error("video source: cannot find pipeline '%s'\n", pipename);
-			exit(-1);
+		if((pipe[i] = serverless_dpipe_lookup(pipename)) == NULL) {
+			int maxHeight = VIDEO_SOURCE_DEF_MAXHEIGHT;
+			int maxStride = VIDEO_SOURCE_DEF_MAXWIDTH*4;
+			serverless_dpipe_create(i, pipename, 8, sizeof(vsource_frame_t) * maxHeight * maxStride + 16);
+			pipe[i] = serverless_dpipe_lookup(pipename);
 		}
 	}
 	//
@@ -207,18 +215,9 @@ vsource_threadproc(void *arg) {
 	gettimeofday(&initialTv, NULL);
 	lastTv = initialTv;
 	token = frame_interval;
-	while(vsource_started != 0) {
-		// encoder has not launched?
-		if(encoder_running() == 0) {
-#ifdef WIN32
-			Sleep(1);
-#else
-			usleep(1000);
-#endif
-			gettimeofday(&lastTv, NULL);
-			token = frame_interval;
-			continue;
-		}
+	// vsource_started = 1;
+	int count = 0;
+	while(vsource_started != 0 && count < 100) {
 		// token bucket based capturing
 		gettimeofday(&captureTv, NULL);
 		token += tvdiff_us(&captureTv, &lastTv);
@@ -237,7 +236,8 @@ vsource_threadproc(void *arg) {
 		}
 		token -= frame_interval;
 		// copy image 
-		data = dpipe_get(pipe[0]);
+		data = serverless_dpipe_get(pipe[0]);
+		data->pointer = (vsource_frame_t*) malloc(sizeof(vsource_frame_t));
 		frame = (vsource_frame_t*) data->pointer;
 #ifdef __APPLE__
 		frame->pixelformat = AV_PIX_FMT_RGBA;
@@ -260,6 +260,9 @@ vsource_threadproc(void *arg) {
 		////////////////////////////////////////
 		}
 		frame->linesize[0] = frame->realstride/*frame->stride*/;
+		
+		frame->imgbufsize = 640 * 480 * 4;
+		frame->imgbuf = (unsigned char*) malloc(frame->imgbufsize * sizeof(unsigned char));
 #ifdef WIN32
 	#ifdef D3D_CAPTURE
 		ga_win32_D3D_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
@@ -273,7 +276,8 @@ vsource_threadproc(void *arg) {
 #elif defined ANDROID
 		ga_androidvideo_capture((char*) frame->imgbuf, frame->imgbufsize);
 #else // X11
-		ga_xwin_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
+		// ga_error("Started vsource leggo\n");
+		ga_loadgen_capture((char*) frame->imgbuf, frame->imgbufsize, prect);
 #endif
 		// draw cursor
 #ifdef WIN32
@@ -286,18 +290,9 @@ vsource_threadproc(void *arg) {
 #ifdef ENABLE_EMBED_COLORCODE
 		vsource_embed_colorcode_inc(frame);
 #endif
-		// duplicate from channel 0 to other channels
-		for(i = 1; i < SOURCES; i++) {
-			dpipe_buffer_t *dupdata;
-			vsource_frame_t *dupframe;
-			dupdata = dpipe_get(pipe[i]);
-			dupframe = (vsource_frame_t*) dupdata->pointer;
-			//
-			vsource_dup_frame(frame, dupframe);
-			//
-			dpipe_store(pipe[i], dupdata);
-		}
-		dpipe_store(pipe[0], data);
+		serverless_dpipe_store(pipe[0], data);
+		ga_error("Sending Source Frame: width=%d, height=%d, format=%d, size=%d\n",
+       data->pointer->realwidth, data->pointer->realheight, data->pointer->pixelformat, data->pointer->realsize);
 		// reconfigured?
 		if(vsource_reconfigured != 0) {
 			frame_interval = (int) (1000000.0 * vsource_framerate_d / vsource_framerate_n);
@@ -306,6 +301,7 @@ vsource_threadproc(void *arg) {
 			ga_error("video source: reconfigured - framerate=%d/%d (interval=%d)\n",
 				vsource_framerate_n, vsource_framerate_d, frame_interval);
 		}
+		++count;
 	}
 	//
 	ga_error("video source: thread terminated.\n");
